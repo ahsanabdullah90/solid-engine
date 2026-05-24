@@ -2,7 +2,9 @@ import enum
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, BigInteger, Float, DateTime, ForeignKey, Enum, JSON, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from sqlalchemy.dialects.postgresql import UUID, JSON
+
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -47,6 +49,9 @@ class Asset(Base):
     modified_at = Column(DateTime)
     hash_sha256 = Column(String)
     status = Column(Enum(AssetStatus), default=AssetStatus.PENDING)
+
+    thumbnail_path = Column(String)
+
     drive = relationship("Drive", back_populates="assets")
     ai_metadata = relationship("AIMetadata", back_populates="asset", uselist=False, cascade="all, delete-orphan")
     proposals = relationship("MoveProposal", back_populates="asset", cascade="all, delete-orphan")
@@ -56,10 +61,12 @@ class AIMetadata(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     asset_id = Column(UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False)
     summary = Column(Text)
-    detected_topics = Column(JSONB)
-    detected_entities = Column(JSONB)
+
+    detected_topics = Column(JSON)
+    detected_entities = Column(JSON)
     image_description = Column(Text)
-    suggested_tags = Column(JSONB)
+    suggested_tags = Column(JSON)
+
     confidence_score = Column(Float)
     model_used = Column(String)
     asset = relationship("Asset", back_populates="ai_metadata")
@@ -79,5 +86,7 @@ class AuditLog(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     timestamp = Column(DateTime, default=datetime.utcnow)
     action_type = Column(String, nullable=False)
-    details = Column(JSONB)
+
+    details = Column(JSON)
+
     outcome = Column(Enum(ActionOutcome))

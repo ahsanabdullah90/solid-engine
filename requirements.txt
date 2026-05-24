@@ -7,3 +7,5 @@ google-generativeai
 ollama
 psutil
 python-dotenv
+Pillow
+reportlab
