@@ -1,0 +1,11 @@
+PySide6
+sqlalchemy
+psycopg2-binary
+redis
+celery
+google-generativeai
+ollama
+psutil
+python-dotenv
+Pillow
+reportlab
