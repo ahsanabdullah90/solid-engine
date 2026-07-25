@@ -1,27 +1,18 @@
 import sys
-<<<<<<< HEAD
 import os
+import uuid
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QStackedWidget, QListWidget, QListWidgetItem,
-    QFileDialog, QMessageBox
-)
-from PySide6.QtCore import Qt
-from app.database.db_session import init_db
-from app.ui.dashboard import DashboardScreen
-from app.ui.explorer import ExplorerScreen
-from app.services.audit_service import AuditExportService
-=======
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QListWidget, QWidget, QFileDialog,
-    QProgressBar, QMessageBox
+    QFileDialog, QMessageBox, QLabel, QProgressBar
 )
 from PySide6.QtCore import Qt, QThread, Signal
 from app.database.db_session import init_db, SessionLocal
 from app.database.models import Drive, Asset, AssetStatus
 from app.workers.tasks import scan_directory
-import uuid
+from app.ui.dashboard import DashboardScreen
+from app.ui.explorer import ExplorerScreen
+from app.services.audit_service import AuditExportService
 
 class ScannerThread(QThread):
     finished = Signal(dict)
@@ -32,35 +23,24 @@ class ScannerThread(QThread):
         self.path = path
 
     def run(self):
-        # In a real app, this would trigger Celery,
-        # but for demonstration we'll show how to call the task
         result = scan_directory(self.drive_id, self.path)
         self.finished.emit(result)
->>>>>>> main
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Media Portfolio Manager")
-<<<<<<< HEAD
         self.setMinimumSize(1024, 768)
-
-        init_db()
-        self.init_ui()
-=======
-        self.setMinimumSize(800, 600)
 
         init_db()
         self.db = SessionLocal()
 
         self.init_ui()
         self.refresh_asset_list()
->>>>>>> main
 
     def init_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-<<<<<<< HEAD
         main_layout = QHBoxLayout(central_widget)
 
         # Sidebar
@@ -82,6 +62,28 @@ class MainWindow(QMainWindow):
 
         sidebar_layout.addWidget(self.nav_list)
         sidebar_layout.addStretch()
+
+        # Scan control panel at bottom of sidebar
+        self.status_label = QLabel("Ready")
+        self.status_label.setStyleSheet("color: #ecf0f1; font-size: 11px; padding: 5px;")
+        self.status_label.setWordWrap(True)
+        
+        self.scan_btn = QPushButton("Scan Directory")
+        self.scan_btn.setStyleSheet("""
+            QPushButton { background-color: #3498db; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 4px; }
+            QPushButton:hover { background-color: #2980b9; }
+            QPushButton:disabled { background-color: #7f8c8d; }
+        """)
+        self.scan_btn.clicked.connect(self.start_scan)
+        
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 0) # Indeterminate
+        self.progress_bar.setFixedHeight(8)
+        self.progress_bar.hide()
+        
+        sidebar_layout.addWidget(self.status_label)
+        sidebar_layout.addWidget(self.progress_bar)
+        sidebar_layout.addWidget(self.scan_btn)
 
         main_layout.addWidget(sidebar)
 
@@ -130,46 +132,16 @@ class MainWindow(QMainWindow):
 
             if success: QMessageBox.information(self, "Export Success", f"Audit log exported to {path}")
             else: QMessageBox.critical(self, "Export Failed", "An error occurred during export.")
-=======
-        layout = QVBoxLayout(central_widget)
-
-        # Header
-        header_layout = QHBoxLayout()
-        self.status_label = QLabel("Ready")
-        header_layout.addWidget(self.status_label)
-
-        self.scan_btn = QPushButton("Scan Directory")
-        self.scan_btn.clicked.connect(self.start_scan)
-        header_layout.addWidget(self.scan_btn)
-
-        layout.addLayout(header_layout)
-
-        # Asset List
-        layout.addWidget(QLabel("Assets:"))
-        self.asset_list = QListWidget()
-        layout.addWidget(self.asset_list)
-
-        # Progress Bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 0) # Indeterminate
-        self.progress_bar.hide()
-        layout.addWidget(self.progress_bar)
-
-        # Refresh Button
-        self.refresh_btn = QPushButton("Refresh List")
-        self.refresh_btn.clicked.connect(self.refresh_asset_list)
-        layout.addWidget(self.refresh_btn)
 
     def refresh_asset_list(self):
-        self.asset_list.clear()
-        assets = self.db.query(Asset).all()
-        for asset in assets:
-            self.asset_list.addItem(f"[{asset.status.value}] {asset.filename} - {asset.full_path}")
+        # Refresh data on active view components
+        self.dashboard.refresh_stats()
+        self.explorer.refresh_data()
 
     def start_scan(self):
         dir_path = QFileDialog.getExistingDirectory(self, "Select Directory to Scan")
         if dir_path:
-            # Ensure we have a Drive record
+            # Ensure we have a Drive record in SQLite database
             drive = self.db.query(Drive).filter(Drive.path == dir_path).first()
             if not drive:
                 drive = Drive(id=uuid.uuid4(), name=os.path.basename(dir_path), path=dir_path)
@@ -191,17 +163,9 @@ class MainWindow(QMainWindow):
         self.refresh_asset_list()
         QMessageBox.information(self, "Scan Finished", f"Scan results: {result}")
 
-import os
->>>>>>> main
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
-<<<<<<< HEAD
-    # window.show()
-    print("Application UI initialized successfully.")
-=======
     # window.show() # Disabled for headless environment verification
-    print("Application initialized successfully.")
->>>>>>> main
+    print("Application UI initialized successfully.")
     sys.exit(0)
